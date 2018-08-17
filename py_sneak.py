@@ -1,4 +1,5 @@
 from tkinter import *
+from random import randint
 
 def checkered(canvas, line_distance):
    # vertical lines at an interval of "line_distance" pixel
@@ -15,9 +16,23 @@ rx = -20
 ry = 0
 r = 10
 offset = 10
-
+snake_feed = []
 
 coordinate = [0,0,20,20] #x0,y0, x1,y1
+
+def feed_snake_generator():
+
+    xy=[]
+
+    for i in range(2):
+        temp = randint(0, 18)
+        if temp % 2 == 0:
+            temp = temp * 10
+        else:
+            temp = (temp - 1) * 10
+        #print(":", temp)
+        xy.append(temp)
+    return xy
 
 
 def move_oval_cords(circle, owal_position, body):
@@ -26,6 +41,8 @@ def move_oval_cords(circle, owal_position, body):
         global y
         global rx
         global ry
+        global snake_feed
+        snake_feedxy = []
 
 
         if x == 180 and rx== 20:
@@ -48,6 +65,12 @@ def move_oval_cords(circle, owal_position, body):
         #for temporary in range(len(owal_position)-1):
         #    owal_position[temporary+1] = owal_position[temporary].copy()
         temp = [x - r + offset, y - r + offset, x + r + offset, y + r + offset]
+
+
+        if not snake_feed:
+            snake_feedxy.append(feed_snake_generator())
+
+        print (snake_feedxy)
 
         for temp_owal, temp_position in zip(circle, owal_position):
             if temp_position == temp:
@@ -99,6 +122,8 @@ def downKey(event):
 master = Tk()
 canvas_width = 200
 canvas_height = 200
+
+
 
 body = Canvas(master,width=canvas_width,height=canvas_height)
 body.grid(row=21, column=0, padx=10, pady=2)
