@@ -1,6 +1,8 @@
 from tkinter import *
 from random import randint
 
+# Origin for this funciton https://www.python-course.eu/tkinter_canvas.php
+# checkered draw pattern on canvas
 def checkered(canvas, line_distance):
    # vertical lines at an interval of "line_distance" pixel
    for x in range(line_distance,canvas_width,line_distance):
@@ -10,23 +12,30 @@ def checkered(canvas, line_distance):
       canvas.create_line(0, y, canvas_width, y, fill="#476042")
 
 
-x = 0
-y = 0
-rx = -20
-ry = 0
-r = 10
-offset = 10
-snake_feed = []
+#  GLOBAL Variables
+x = 0       # coordinate variable head of snake
+y = 0       # coordinate variable of head of snake
+r = 10      # variable radious oval of snake
+rx = (2*r)    # variable with information about movement direction at X axis/default left
+ry = 0*r      # variable with information about movement direction at X axis
+offset = r  # offset for x,y coordinate (taking account for radious take some space)
+snake_feed = [] # postion oval feed of snake (x0,y0,x1,y1), when head of snake cover this point then snake will grow up
+feed_id = []    # ID of snake_feed oval needed during deleting operation
+result = ""     # this label story inforamtion about game status
+canvas_width = 200  # canvas X
+canvas_height = 200 # canvas Y
+score = 0
 
-coordinate = [0,0,20,20] #x0,y0, x1,y1
 
+
+# feed_snake_generator() generate x,y comlete even coordination in range <0,18>
 def feed_snake_generator():
 
     xy=[]
 
     for i in range(2):
         temp = randint(0, 18)
-        if temp % 2 == 0:
+        if temp % 2 == 0:   #if even check
             temp = temp * 10
         else:
             temp = (temp - 1) * 10
@@ -34,7 +43,7 @@ def feed_snake_generator():
         xy.append(temp)
     return xy
 
-
+# move_oval_cords() provide logic for snake game move,feed,end game etc
 def move_oval_cords(circle, owal_position, body):
     def next_step():
         global x
@@ -42,9 +51,12 @@ def move_oval_cords(circle, owal_position, body):
         global rx
         global ry
         global snake_feed
+        temp_feed = []
+        global feed_id
+        global score
         snake_feedxy = []
 
-
+        # left/right movement
         if x == 180 and rx== 20:
             x = 0
         elif x == 0 and rx == -20:
@@ -52,8 +64,7 @@ def move_oval_cords(circle, owal_position, body):
         else:
             x += rx
 
-
-        #up down
+        #up down movement
         if y == 180 and ry == 20:
             y = 0
         elif y == 0 and ry == -20:
@@ -61,68 +72,72 @@ def move_oval_cords(circle, owal_position, body):
         else:
             y += ry
 
+        if not snake_feed:  #check is feed for snake exist on a canvas?
+            temp = feed_snake_generator()     #if not exist generate new xy coordinate
+            snake_feed.append([temp[0] - r+ offset, temp[1] - r+ offset, temp[0] + r+ offset , temp[1] + r + offset])   # transform into oval coordinate
+            #print(temp_feed)   #for debbug process
+            feed_id = body.create_oval(snake_feed[0], width=0, fill='yellow')   # draw oval in xy coordinate
 
-        #for temporary in range(len(owal_position)-1):
-        #    owal_position[temporary+1] = owal_position[temporary].copy()
-        temp = [x - r + offset, y - r + offset, x + r + offset, y + r + offset]
-
-
-        if not snake_feed:
-            snake_feedxy.append(feed_snake_generator())
-
-        print (snake_feedxy)
+        next_head_xy = [x - r + offset, y - r + offset, x + r + offset, y + r + offset] #head posstion in next step
 
         for temp_owal, temp_position in zip(circle, owal_position):
-            if temp_position == temp:
+            if temp_position == next_head_xy:   #if head meet tail then game is over
                 print("END OVER")
-                rx=0
-                ry=0
-                body.itemconfig(temp_owal, fill = "RED")
+                result.set("GAME OVER Result: %d" %score)
+                rx = 0  # stop snake
+                ry = 0  # stop snake
+                body.itemconfig(temp_owal, fill = "RED")    #show where collsion take place
                 return
 
-        owal_position.pop(0)
-        owal_position.append(temp)
+        if next_head_xy == snake_feed[0]:   #enlargement of the snake
+            print("grow UP!")
+            owal_position.append(snake_feed[0])
+            circle.append(body.create_oval(temp_list, width=0, fill='green'))
+            score +=1
+            result.set("Result: %d" %score)
+            body.delete(feed_id)    #delete feed oval
+            snake_feed.pop()        #delete feed cooridnate
 
-        for temp_owal, temp_position in zip(circle,owal_position):
-            body.coords(temp_owal, temp_position)
 
-        #body.move(circle, rx, ry)
-    #    body.coords(circle, owal_position)
 
-        #body.after(1000,next_step())
-        body.after(200,next_step)
+        owal_position.pop(0)            #movement of oval, remove first tail coordinate
+        owal_position.append(next_head_xy)  #movement of oval, add next step coordinate
+
+        for temp_owal, temp_position in zip(circle, owal_position):
+            body.coords(temp_owal, temp_position)   #redraw snake with new coordinates for next step
+
+        body.after(200,next_step)   #loop to next_step after 200ms
 
     next_step()
 
-
+# canvas control event functions
 def leftKey(event):
     global rx,    ry
 
-    print ("lewo")
+    print ("left")
     rx = -20
     ry = 0
 
 def rightKey(event):
     global rx, ry
-    print("prawo")
+    print("right")
     rx = 20
     ry = 0
 
 def upKey(event):
     global rx, ry
-    print("góra")
-    ry = -20
+    print("up")
     rx = 0
+    ry = -20
+
 def downKey(event):
     global rx, ry
-    print("dół")
-    ry = 20
+    print("down")
     rx = 0
+    ry = 20
 
 master = Tk()
-canvas_width = 200
-canvas_height = 200
-
+master.title("pySnake v1.0")
 
 
 body = Canvas(master,width=canvas_width,height=canvas_height)
@@ -134,24 +149,26 @@ body.bind('<Up>', upKey)
 body.bind('<Down>', downKey)
 body.focus_set()
 
-#rect = Canvas(master, width=20, height=20, bg='green').grid(row=21, column=0, padx=10, pady=2)
 circle = []
 owal_position = []
+result = StringVar()
+result.set("Result: %d" %score)
 
-for temp in range(160, 0, -20):
-    temp_list = [x - r + offset+temp, y - r + offset, x + r + offset+temp, y + r + offset]
-    owal_position.append(temp_list)
-    circle.append(body.create_oval(temp_list, width=0, fill='green'))
+checkered(body,20)
+
+temp_list = [x - r + offset, y - r + offset, x + r + offset, y + r + offset]
+owal_position.append(temp_list)
+circle.append(body.create_oval(temp_list, width=0, fill='green'))
 
 move_oval_cords(circle,owal_position, body)
 
 upper_frame = Canvas(master,width= canvas_width,height=canvas_height/10)
 upper_frame.grid(row=0, column=0, padx=10, pady=2)
 
-Label(upper_frame,text = "Sneak v0.0").grid(row=0, column=0, padx=10, pady=2)
+Label(upper_frame,text = "Sneak v1.0").grid(row=0, column=0, padx=10, pady=2)
+Label(upper_frame,textvariable = result).grid(row=1, column=0, padx=10, pady=2)
 
 
 
-checkered(body,20)
 
 mainloop()
